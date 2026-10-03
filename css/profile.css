@@ -1,0 +1,5 @@
+.brand-avatar{display:block;flex-shrink:0;width:40px;height:40px;border-radius:12px;border:1px solid #9e8fc1;overflow:hidden;background:#428cc9}.brand-avatar img{width:100%;height:100%;object-fit:cover;transform:scale(1.35);transform-origin:55% 30%}.about-identity{display:flex;align-items:center;gap:18px;margin-bottom:28px}.about-avatar{width:72px;height:72px;border-radius:18px;overflow:hidden;display:block;flex-shrink:0;border:1px solid #9e8fc1}.about-avatar img{width:100%;height:100%;object-fit:cover;transform:scale(1.35);transform-origin:55% 30%}.about-identity strong{font-size:20px;font-weight:600;display:block}.about-identity div>span{font:10px/1.8 var(--mono);color:var(--muted);display:block;overflow-wrap:anywhere}.voice-home>div,.waveform{min-width:0}.waveform i{min-width:0}.voice-home-art{overflow:hidden}
+.hero-art{overflow:clip}
+@media(max-width:360px){.home-page .hero h1{font-size:clamp(3.5rem,18vw,4.5rem)}.about-identity>div{min-width:0}}
+.help-card,.help-card>div{min-width:0}
+@media(max-width:360px){.help-grid .help-card{padding:20px}.help-card .collab-mark{width:44px;font-size:60px}.help-card h3{overflow-wrap:anywhere}}
