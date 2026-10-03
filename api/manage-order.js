@@ -1,7 +1,13 @@
-import { handler,parseBody,rateLimit,adminAuth,identifier,getOrder,redis,HttpError } from '../lib/backend.js';
+import { handler,parseBody,rateLimit,adminAuth,identifier,getOrder,redis,HttpError,hasRedis } from '../lib/backend.js';
 import { editOrder } from '../lib/discord.js';
+import { readDiscordOrder,decideDiscordOrder } from '../lib/discord-storage.js';
 export default handler('POST',async(req,res)=>{
   const body=parseBody(req);await rateLimit(req,res,'admin',20);adminAuth(req);identifier(body.id);
+  if(body.messageId||!hasRedis()){
+    if(body.decision&&!['Accepted','Denied'].includes(body.decision))throw new HttpError(400,'Choose Accepted or Denied.');
+    const order=body.decision?await decideDiscordOrder(body.id,body.messageId,body.decision):await readDiscordOrder(body.id,body.messageId);
+    return{id:order.id,status:order.status,details:{...order.details,submitted:order.createdAt}};
+  }
   let order=await getOrder(body.id);if(!order?.delivered)throw new HttpError(404,'The request was not found or is not ready for review.');
   let warning;
   if(body.decision){

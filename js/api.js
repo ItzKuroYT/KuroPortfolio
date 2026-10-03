@@ -1,7 +1,8 @@
 import { API_BASE_URL } from './config.js';
 export async function api(path, data, options = {}) {
   const local = ['localhost', '127.0.0.1'].includes(location.hostname);
-  if (!API_BASE_URL && !local) throw new Error('Online requests are not configured yet. Please email officialfnaffanstudios@gmail.com.');
+  const vercel = location.hostname.endsWith('.vercel.app');
+  if (!API_BASE_URL && !local && !vercel) throw new Error('The website’s backend URL has not been configured. Please contact Kuro by email.');
   const base = API_BASE_URL.replace(/\/$/, '');
   const response = await fetch(`${base}/api/${path}`, {
     method: options.method || 'POST',

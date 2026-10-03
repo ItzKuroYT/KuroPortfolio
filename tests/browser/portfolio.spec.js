@@ -44,3 +44,14 @@ test('All six supplied screenshots load and the viewer works with keyboard navig
   const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();await expect(dialog.locator('img')).toHaveAttribute('src','assets/images/projects/minestore.png');
   await page.keyboard.press('Escape');await expect(dialog).not.toBeVisible();await expect(mineStore).toBeFocused();
 });
+test('Discord-only tracking token is displayed and fits the tracking form',async({page})=>{
+  const token=`d1.${'b'.repeat(24)}.${'c'.repeat(250)}.${'d'.repeat(32)}`;
+  await page.goto(`/request-received.html#id=KURO-1234567890ABCDEF&token=${token}`);
+  await expect(page.locator('#received-token')).toHaveText(token);
+  await page.goto('/order-status.html');await expect(page.locator('#trackingToken')).toHaveValue(token);await expect(page.locator('#trackingToken')).toHaveAttribute('maxlength','800');
+  await page.route('**/api/manage-order',async route=>{
+    const payload=route.request().postDataJSON();expect(payload.messageId).toBe('123456789');
+    await route.fulfill({json:{id:'KURO-1234567890ABCDEF',status:'Pending Review',details:{service:'Website'}}});
+  });
+  await page.goto('/admin.html?id=KURO-1234567890ABCDEF&messageId=123456789');await page.getByLabel('Management key',{exact:true}).fill('private-test-key');await page.getByRole('button',{name:'Authenticate & review'}).click();await expect(page.locator('#admin-actions')).toBeVisible();
+});
