@@ -45,7 +45,7 @@ if (screenshotDialog) {
 }
 document.querySelector('#load-youtube')?.addEventListener('click', () => {
   const player = document.createElement('iframe');
-  player.src = 'https://www.youtube-nocookie.com/embed/CA__y3VWQco?autoplay=1&list=PLqspCx7J_SFpbiSiFzLh7ehN4Dvj-uz_A';
+  player.src = 'https://www.youtube-nocookie.com/embed/TVenJceh8iQ?autoplay=1&start=424';
   player.title = 'Kuro voice acting — YouTube Project'; player.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture'; player.allowFullscreen = true;
   document.querySelector('#youtube-preview').replaceChildren(player);
 });
