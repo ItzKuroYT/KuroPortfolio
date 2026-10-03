@@ -1,6 +1,6 @@
-import { handler,parseBody,antiSpam,rateLimit,requiredEnv,frontendURL,HttpError,fetchJSON } from '../lib/backend.js';
+import { handler,parseBody,rateLimit,requiredEnv,frontendURL,HttpError,fetchJSON } from '../lib/backend.js';
 export default handler('POST',async(req,res)=>{
-  const body=parseBody(req);antiSpam(body);
+  const body=parseBody(req);
   const value=body.amount;
   if(typeof value!=='string'||!/^\d{1,5}(\.\d{1,2})?$/.test(value))throw new HttpError(400,'Enter a valid donation amount with at most two decimal places.');
   const cents=Math.round(Number(value)*100);if(!Number.isSafeInteger(cents)||cents<100||cents>1000000)throw new HttpError(400,'Choose an amount from $1.00 to $10,000.00 USD.');

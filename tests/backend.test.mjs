@@ -46,7 +46,7 @@ async function invoke(fn,body={},extra={}){
   await fn(req,res);return{status:res.statusCode,headers:res.headers,body:res.value?JSON.parse(res.value):null};
 }
 test('Checkout sends integer cents, USD and configured GitHub subpath URLs to Stripe',async()=>{
-  const response=await invoke(checkout,{amount:'15.25',elapsed:4000});assert.equal(response.status,200);
+  const response=await invoke(checkout,{amount:'15.25'});assert.equal(response.status,200);
   const call=calls.find(c=>c.url.startsWith('https://api.stripe.com'));const params=new URLSearchParams(call.body);
   assert.equal(params.get('line_items[0][price_data][unit_amount]'),'1525');assert.equal(params.get('line_items[0][price_data][currency]'),'usd');assert.equal(params.get('success_url'),`${origin}/portfolio/success.html`);assert.equal(params.get('cancel_url'),`${origin}/portfolio/cancel.html`);
 });

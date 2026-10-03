@@ -1,6 +1,5 @@
 import { api, friendlyError, loading, showMessage } from './api.js';
 const form = document.querySelector('#donation-form'), custom = form.elements.amount, total = document.querySelector('#donation-total');
-const startedAt = Date.now();
 function amount() { return custom.value.trim() || form.querySelector('[name=preset]:checked')?.value || ''; }
 function update() { const value = Number(amount()); total.textContent = Number.isFinite(value) && value > 0 ? `$${value.toFixed(2)} USD` : 'Choose an amount'; }
 form.querySelectorAll('[name=preset]').forEach(radio => radio.addEventListener('change', () => { custom.value=''; custom.setCustomValidity(''); update(); }));
@@ -11,7 +10,7 @@ form.addEventListener('submit', async event => {
   if (!form.reportValidity()) return;
   const button = form.querySelector('[type=submit]'); loading(button,true,'Creating secure checkout…');
   try {
-    const response = await api('create-checkout-session',{ amount: value, company:form.elements.company.value, elapsed:Date.now()-startedAt });
+    const response = await api('create-checkout-session',{ amount: value });
     const url = new URL(response.url); if (url.protocol !== 'https:' || url.hostname !== 'checkout.stripe.com') throw new Error('Checkout returned an invalid payment link. Please contact Kuro.');
     location.assign(url.href);
   } catch(error) { showMessage(msg,friendlyError(error)); loading(button,false); }
