@@ -89,6 +89,16 @@ Tracking expires after 90 days. Discord messages remain until manually deleted; 
 
 Success/cancel URLs are `FRONTEND_URL` plus `success.html` and `cancel.html`. Opening the success page alone does not prove payment; Stripe's Dashboard is the payment record. No Stripe webhook is used because donations trigger no automatic fulfillment. Add a signature-verified webhook before adding payment-dependent fulfillment or accounting automation.
 
+### Donation tax setup and Stripe errors
+
+Donations use standard Stripe Checkout, with `managed_payments[enabled]=false`, the documented Cash Donation code `txcd_90000001`, and inclusive tax behavior so the selected amount stays the checkout total. This assumes donors receive no goods, services, or rewards. It does not establish charitable status, deductibility, or income-tax treatment.
+
+Stripe Managed Payments is for eligible digital product sales and does not list cash donations as eligible. `txcd_20030000` means General — Services and is not a donation code. See [Managed Payments eligibility](https://docs.stripe.com/payments/managed-payments/eligibility) and [Stripe's tax-code list](https://docs.stripe.com/tax/tax-codes). The server pins API version `2025-03-31.basil` to support the explicit Managed Payments setting.
+
+`STRIPE_AUTOMATIC_TAX` defaults to `false`. If you choose to use the separate Stripe Tax product for these payments, configure its Tax settings in the appropriate live/test environment, verify your classification and registrations, set `STRIPE_AUTOMATIC_TAX=true` in Vercel, and redeploy. Managed Payments enrollment alone does not configure standard Stripe Tax. See [Checkout with Stripe Tax](https://docs.stripe.com/tax/checkout/page).
+
+If checkout still fails after deploying, open Vercel function logs for `/api/create-checkout-session` and find `Stripe Checkout rejected`. It reports the Stripe request ID, error code, rejected parameter, and a credential-redacted message. You can also find the matching request in Stripe Dashboard → Developers/Workbench → Logs. Share that error detail for troubleshooting, never your secret key. Visitor-facing errors include a request reference when Stripe supplies it. This integration requires an account authorized to accept these payments through standard Stripe Payments; Managed Payments eligibility alone does not establish that.
+
 ## Discord orders and Accept/Deny
 
 Create a webhook in a private channel under channel Settings → Integrations → Webhooks. Put its URL only in Vercel's `DISCORD_ORDER_WEBHOOK_URL`. Set the long random `ORDER_ADMIN_KEY` and redeploy. Submit a test request with at least one email, Discord, or PulsedConnect contact.

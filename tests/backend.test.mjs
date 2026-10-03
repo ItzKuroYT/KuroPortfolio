@@ -10,6 +10,7 @@ const origin='https://kuro.example';
 const valid=()=>({category:'Web Development',service:'Website',title:'Test website',description:'A portfolio website for a test project.',requirements:'Three pages and accessible navigation.',budget:'100 USD',deadline:'2099-12-31',email:'customer@example.com',consent:true,elapsed:4000});
 let store,calls,rate,failDiscord,failRedis,failMC,messages;
 beforeEach(()=>{
+  delete process.env.STRIPE_AUTOMATIC_TAX;
   process.env.ALLOWED_ORIGINS=origin;process.env.FRONTEND_URL=`${origin}/portfolio/`;
   process.env.STRIPE_SECRET_KEY='test-only-key';process.env.ORDER_ADMIN_KEY='test-management-key-that-is-long-enough';
   process.env.DISCORD_ORDER_WEBHOOK_URL='https://discord.com/api/webhooks/123/test-token';
@@ -49,6 +50,40 @@ test('Checkout sends integer cents, USD and configured GitHub subpath URLs to St
   const response=await invoke(checkout,{amount:'15.25'});assert.equal(response.status,200);
   const call=calls.find(c=>c.url.startsWith('https://api.stripe.com'));const params=new URLSearchParams(call.body);
   assert.equal(params.get('line_items[0][price_data][unit_amount]'),'1525');assert.equal(params.get('line_items[0][price_data][currency]'),'usd');assert.equal(params.get('success_url'),`${origin}/portfolio/success.html`);assert.equal(params.get('cancel_url'),`${origin}/portfolio/cancel.html`);
+  assert.equal(params.get('managed_payments[enabled]'),'false');
+  assert.equal(params.get('automatic_tax[enabled]'),'false');
+  assert.equal(params.get('line_items[0][price_data][product_data][tax_code]'),'txcd_90000001');
+  assert.equal(params.get('line_items[0][price_data][tax_behavior]'),'inclusive');
+  assert.equal(call.headers['Stripe-Version'],'2025-03-31.basil');
+});
+test('Separate Stripe Tax is opt-in and does not enable Managed Payments',async()=>{
+  process.env.STRIPE_AUTOMATIC_TAX='true';
+  assert.equal((await invoke(checkout,{amount:'25'})).status,200);
+  const params=new URLSearchParams(calls.find(c=>c.url.startsWith('https://api.stripe.com')).body);
+  assert.equal(params.get('automatic_tax[enabled]'),'true');
+  assert.equal(params.get('managed_payments[enabled]'),'false');
+  process.env.STRIPE_AUTOMATIC_TAX='invalid';
+  assert.equal((await invoke(checkout,{amount:'25'})).status,503);
+});
+test('Stripe errors identify configuration failures without leaking secret keys',async()=>{
+  const originalFetch=globalThis.fetch,originalLog=console.error,logs=[];
+  console.error=(...args)=>logs.push(args);
+  try{
+    const cases=[
+      {status:401,error:{type:'authentication_error',message:`Invalid API Key provided: ${process.env.STRIPE_SECRET_KEY}`},expected:/authorized secret key/},
+      {status:400,error:{code:'parameter_invalid_integer',param:'line_items[0][price_data][tax_behavior]',message:'Tax configuration is incomplete.'},expected:/tax configuration/},
+      {status:400,error:{code:'parameter_unknown',param:'managed_payments',message:'Managed Payments configuration was rejected.'},expected:/checkout configuration/}
+    ];
+    for(const item of cases){
+      globalThis.fetch=async(url,options)=>String(url).startsWith('https://api.stripe.com')?Response.json({error:item.error},{status:item.status,headers:{'request-id':'req_test_reference'}}):originalFetch(url,options);
+      const response=await invoke(checkout,{amount:'5'});
+      assert.equal(response.status,503);assert.match(response.body.error,item.expected);
+      assert.match(response.body.error,/req_test_reference/);
+      assert.ok(!JSON.stringify(response.body).includes(process.env.STRIPE_SECRET_KEY));
+    }
+    assert.ok(!JSON.stringify(logs).includes(process.env.STRIPE_SECRET_KEY));
+    assert.match(JSON.stringify(logs),/redacted/);
+  }finally{console.error=originalLog;globalThis.fetch=originalFetch;}
 });
 test('Donation validates bounds and precision on the server',async()=>{for(const amount of ['0','0.99','10000.01','1.234','-1','NaN',100])assert.equal((await invoke(checkout,{amount,elapsed:4000})).status,400);});
 test('CORS allows exact configured origin, handles preflight and rejects unknown origin',async()=>{
